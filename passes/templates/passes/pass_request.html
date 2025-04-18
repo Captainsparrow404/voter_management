@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Temple Pass Request Form</h3>
+                    <div class="text-muted">
+                        <small>Current Date and Time (UTC): {{ current_datetime }}</small><br>
+                        <small>User: {{ user.username }}</small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" novalidate class="pass-request-form">
+                        {% csrf_token %}
+
+                        <!-- Personal Information -->
+                        <div class="form-section">
+                            <h4 class="mb-3">Personal Information</h4>
+
+                            <div class="form-group">
+                                <label for="id_name">Full Name</label>
+                                {{ form.name.errors }}
+                                <input type="text" name="name" id="id_name" class="form-control {% if form.name.errors %}is-invalid{% endif %}"
+                                       value="{{ form.name.value|default:'' }}" required>
+                                {% if form.name.help_text %}
+                                <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="id_email">Email Address</label>
+                                {{ form.email.errors }}
+                                <input type="email" name="email" id="id_email" class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                                       value="{{ form.email.value|default:'' }}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="id_phone">Phone Number</label>
+                                {{ form.phone.errors }}
+                                <input type="tel" name="phone" id="id_phone" class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+                                       pattern="[0-9]{10}" title="Please enter a valid 10-digit phone number"
+                                       value="{{ form.phone.value|default:'' }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Visit Details -->
+                        <div class="form-section mt-4">
+                            <h4 class="mb-3">Visit Details</h4>
+
+                            <div class="form-group">
+                                <label for="id_temple">Temple</label>
+                                {{ form.temple.errors }}
+                                <select name="temple" id="id_temple" class="form-control {% if form.temple.errors %}is-invalid{% endif %}" required>
+                                    <option value="">Select Temple</option>
+                                    {% for value, label in form.fields.temple.choices %}
+                                    <option value="{{ value }}" {% if form.temple.value == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="id_visit_date">Visit Date</label>
+                                {{ form.visit_date.errors }}
+                                <input type="date" name="visit_date" id="id_visit_date"
+                                       class="form-control {% if form.visit_date.errors %}is-invalid{% endif %}"
+                                       value="{{ form.visit_date.value|date:'Y-m-d'|default:'' }}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="id_num_persons">Number of Persons</label>
+                                {{ form.num_persons.errors }}
+                                <input type="number"
+                                       name="num_persons"
+                                       id="id_num_persons"
+                                       class="form-control {% if form.num_persons.errors %}is-invalid{% endif %}"
+                                       min="1"
+                                       max="6"
+                                       value="{{ form.num_persons.value|default:'1' }}"
+                                       required>
+                                <small class="form-text text-muted">
+                                    Maximum 6 persons allowed per pass
+                                </small>
+                                {% if form.num_persons.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.num_persons.errors|join:", " }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- ID Proof -->
+                        <div class="form-section mt-4">
+                            <h4 class="mb-3">ID Proof Details</h4>
+
+                            <div class="form-group">
+                                <label for="id_id_proof_type">ID Proof Type</label>
+                                {{ form.id_proof_type.errors }}
+                                <select name="id_proof_type" id="id_id_proof_type"
+                                        class="form-control {% if form.id_proof_type.errors %}is-invalid{% endif %}" required>
+                                    <option value="">Select ID Proof Type</option>
+                                    {% for value, label in form.fields.id_proof_type.choices %}
+                                    <option value="{{ value }}" {% if form.id_proof_type.value == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="id_id_proof_number">ID Proof Number</label>
+                                {{ form.id_proof_number.errors }}
+                                <input type="text" name="id_proof_number" id="id_id_proof_number"
+                                       class="form-control {% if form.id_proof_number.errors %}is-invalid{% endif %}"
+                                       value="{{ form.id_proof_number.value|default:'' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary btn-block">Submit Pass Request</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .form-section {
+        padding: 15px;
+        background-color: #fff;
+        border-radius: 5px;
+    }
+
+    .form-section h4 {
+        color: #2c3e50;
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        color: #34495e;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 8px 12px;
+    }
+
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+
+    .is-invalid {
+        border-color: #dc3545;
+    }
+
+    .invalid-feedback, .errorlist {
+        color: #dc3545;
+        font-size: 80%;
+        margin-top: 0.25rem;
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background-color: #0069d9;
+        border-color: #0062cc;
+    }
+
+    .alert {
+        margin-bottom: 1rem;
+    }
+
+    .alert-dismissible .close {
+        padding: 0.75rem 1.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set minimum date for visit_date to today
+    document.addEventListener('DOMContentLoaded', function() {
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        today = yyyy + '-' + mm + '-' + dd;
+
+        document.getElementById('id_visit_date').min = today;
+    });
+    document.getElementById('id_num_persons').addEventListener('input', function() {
+        var value = parseInt(this.value);
+        if (value > 6) {
+            this.value = 6;
+            alert('Maximum 6 persons allowed per pass');
+        } else if (value < 1) {
+            this.value = 1;
+            alert('Minimum 1 person required');
+        }
+    });
+
+    // Auto-capitalize ID proof number
+    document.getElementById('id_id_proof_number').addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+</script>
+{% endblock %}

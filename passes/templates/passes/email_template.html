@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .pass-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 2px solid #000;
+            font-family: Arial, sans-serif;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .details {
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="pass-container">
+        <div class="header">
+            <h1>Temple Pass</h1>
+            <h2>{{ temple }}</h2>
+        </div>
+
+        <div class="details">
+            <p><strong>Name:</strong> {{ name }}</p>
+            <p><strong>Number of Persons:</strong> {{ num_persons }}</p>
+            <p><strong>Visit Date:</strong> {{ visit_date }}</p>
+        </div>
+
+        <div class="footer">
+            <p>This pass is valid only for the date mentioned above.</p>
+            <p>Please carry a valid ID proof during your visit.</p>
+        </div>
+    </div>
+</body>
+</html>

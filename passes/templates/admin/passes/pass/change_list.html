@@ -1,0 +1,531 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block content_title %}
+    <h1>Pass Management</h1>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        .info-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+
+        .time-info {
+            font-family: 'Courier New', monospace;
+            color: #007bff;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .user-info {
+            color: #28a745;
+            font-size: 16px;
+        }
+
+        .status-tabs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-tab {
+            flex: 1;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .status-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .status-count {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .pending-tab { background-color: #fff3cd; color: #856404; }
+        .approved-tab { background-color: #d4edda; color: #155724; }
+        .rejected-tab { background-color: #f8d7da; color: #721c24; }
+
+        .active-tab { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+
+        .bulk-actions {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .approve-button { background-color: #28a745; }
+        .reject-button { background-color: #dc3545; }
+        .delete-button { background-color: #6c757d; }
+
+        #result_list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        #result_list th {
+            background-color: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        #result_list td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+
+        #result_list tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 4px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="content-main">
+    <!-- Info Header -->
+    <div class="info-header">
+        <div class="time-info">
+            <strong>Current Date and Time (UTC):</strong>
+            <span id="current-time">{{ current_time }}</span>
+        </div>
+        <div class="user-info">
+            <strong>Current User:</strong>
+            <span>{{ current_user }}</span>
+        </div>
+    </div>
+
+    <!-- Status Tabs -->
+    <div class="status-tabs">
+        <div class="status-tab pending-tab {% if status_filter == 'PENDING' %}active-tab{% endif %}"
+             onclick="handleTabClick('PENDING')" data-status="PENDING">
+            <div>Pending</div>
+            <div class="status-count">{{ pending_count }}</div>
+        </div>
+        <div class="status-tab approved-tab {% if status_filter == 'APPROVED' %}active-tab{% endif %}"
+             onclick="handleTabClick('APPROVED')" data-status="APPROVED">
+            <div>Approved</div>
+            <div class="status-count">{{ approved_count }}</div>
+        </div>
+        <div class="status-tab rejected-tab {% if status_filter == 'REJECTED' %}active-tab{% endif %}"
+             onclick="handleTabClick('REJECTED')" data-status="REJECTED">
+            <div>Rejected</div>
+            <div class="status-count">{{ rejected_count }}</div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div id="bulk-actions" class="bulk-actions" style="display: none;">
+        <!-- Will be populated by JavaScript -->
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-spinner"></div>
+
+    <!-- Results Table -->
+    <table id="result_list">
+        <thead>
+            <tr>
+                <th width="30">
+                    <input type="checkbox" id="select-all">
+                </th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Temple</th>
+                <th>Visit Date</th>
+                <th>Persons</th>
+                <th>ID Type</th>
+                <th>ID Number</th>
+                <th>Status</th>
+                <th>Processed Time</th>
+                <th>Processed By</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Will be populated by JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<script type="text/javascript">
+function updateCurrentTime() {
+    const now = new Date();
+    const formatted = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')} ${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')}`;
+    document.getElementById('current-time').textContent = formatted;
+}
+
+async function fetchPasses(status) {
+    showLoading();
+    try {
+        const response = await fetch(`/admin/passes/pass/api/passes/${status.toLowerCase()}/`, {
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            credentials: 'same-origin'
+        });
+        if (!response.ok) throw new Error('Network response was not ok');
+        return await response.json();
+    } catch (error) {
+        showError('Failed to load passes');
+        console.error('Error:', error);
+        return [];
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayPasses(passes, status) {
+    const tbody = document.querySelector('#result_list tbody');
+    const bulkActions = document.getElementById('bulk-actions');
+
+    // Update bulk actions
+    bulkActions.innerHTML = getBulkActionButtons(status);
+    bulkActions.style.display = passes.length > 0 ? 'block' : 'none';
+
+    // Update table content
+    tbody.innerHTML = passes.map(pass => `
+        <tr>
+            <td><input type="checkbox" name="selected_passes" value="${pass.id}"></td>
+            <td>${escapeHtml(pass.name)}</td>
+            <td>${escapeHtml(pass.email)}</td>
+            <td>${escapeHtml(pass.phone)}</td>
+            <td>${escapeHtml(pass.temple)}</td>
+            <td>${formatDate(pass.visit_date)}</td>
+            <td>${pass.num_persons}</td>
+            <td>${escapeHtml(pass.id_proof_type)}</td>
+            <td>${escapeHtml(pass.id_proof_number)}</td>
+            <td><span class="status-badge status-${pass.status.toLowerCase()}">${pass.status}</span></td>
+            <td>${pass.processed_time || '-'}</td>
+            <td>${pass.processed_by?.username || '-'}</td>
+            <td>${getActionButtons(pass, status)}</td>
+        </tr>
+    `).join('');
+
+    // Reset select all checkbox
+    document.getElementById('select-all').checked = false;
+}
+
+function getBulkActionButtons(status) {
+    if (status === 'PENDING') {
+        return `
+            <button onclick="handleBulkReject()" class="action-button reject-button">
+                Reject Selected
+            </button>
+        `;
+    } else {
+        return `
+            <button onclick="handleBulkDelete()" class="action-button delete-button">
+                Delete Selected
+            </button>
+        `;
+    }
+}
+
+function getActionButtons(pass, status) {
+    if (status === 'PENDING') {
+        return `
+            <button onclick="handlePassAction(${pass.id}, 'approve')"
+                    class="action-button approve-button">Approve</button>
+            <button onclick="handlePassAction(${pass.id}, 'reject')"
+                    class="action-button reject-button">Reject</button>
+        `;
+    }
+    return '';
+}
+
+async function handlePassAction(passId, action) {
+    if (!confirm(`Are you sure you want to ${action} this pass?`)) return;
+
+    showLoading();
+    try {
+        const response = await fetch(`/admin/passes/pass/api/passes/${passId}/${action}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || `Failed to ${action} pass`);
+
+        showSuccess(`Pass ${action}ed successfully`);
+        await refreshCurrentTab();
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleBulkReject() {
+    const selectedIds = getSelectedPassIds();
+    if (selectedIds.length === 0) {
+        showError('Please select at least one pass to reject');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to reject ${selectedIds.length} passes?`)) return;
+
+    showLoading();
+    try {
+        const formData = new FormData();
+        selectedIds.forEach(id => formData.append('pass_ids[]', id));
+
+        const response = await fetch('/admin/passes/pass/api/passes/bulk-reject/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            body: formData,
+            credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Bulk rejection failed');
+
+        showSuccess(data.message);
+        await refreshCurrentTab();
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function handleBulkDelete() {
+    const selectedIds = getSelectedPassIds();
+    if (selectedIds.length === 0) {
+        showError('Please select at least one pass to delete');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} passes? This action cannot be undone.`)) return;
+
+    showLoading();
+    try {
+        const formData = new FormData();
+        selectedIds.forEach(id => formData.append('pass_ids[]', id));
+
+        const response = await fetch('/admin/passes/pass/api/passes/bulk-delete/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            body: formData,
+            credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Bulk deletion failed');
+
+        showSuccess(data.message);
+        await refreshCurrentTab();
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+function getSelectedPassIds() {
+    return Array.from(document.querySelectorAll('input[name="selected_passes"]:checked'))
+        .map(cb => cb.value);
+}
+
+async function refreshCurrentTab() {
+    const currentStatus = document.querySelector('.status-tab.active-tab').dataset.status;
+    await handleTabClick(currentStatus);
+    await updateCountBadges();
+}
+
+async function updateCountBadges() {
+    try {
+        const response = await fetch('/admin/passes/pass/api/passes/counts/');
+        const counts = await response.json();
+
+        ['PENDING', 'APPROVED', 'REJECTED'].forEach(status => {
+            const countElement = document.querySelector(`.${status.toLowerCase()}-tab .status-count`);
+            if (countElement) {
+                countElement.textContent = counts[status.toLowerCase()];
+            }
+        });
+    } catch (error) {
+        console.error('Error updating counts:', error);
+    }
+}
+
+function showLoading() {
+    document.getElementById('loading-spinner').style.display = 'block';
+}
+
+function hideLoading() {
+    document.getElementById('loading-spinner').style.display = 'none';
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
+    notification.style.color = type === 'success' ? '#155724' : '#721c24';
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+function showSuccess(message) {
+    showNotification(message, 'success');
+}
+
+function showError(message) {
+    showNotification(message, 'error');
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+function escapeHtml(unsafe) {
+    return unsafe
+        ? unsafe.replace(/[&<"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]))
+        : '';
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+async function handleTabClick(status) {
+    // Update active tab
+    document.querySelectorAll('.status-tab').forEach(tab => {
+        tab.classList.toggle('active-tab', tab.dataset.status === status);
+    });
+
+    // Update URL
+    const url = new URL(window.location);
+    url.searchParams.set('status_filter', status);
+    window.history.pushState({}, '', url);
+
+    // Fetch and display data
+    const passes = await fetchPasses(status);
+    displayPasses(passes, status);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialStatus = urlParams.get('status_filter') || 'PENDING';
+
+    handleTabClick(initialStatus);
+    setInterval(updateCurrentTime, 1000);
+
+    // Set up select all functionality
+    document.getElementById('select-all').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('input[name="selected_passes"]');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+
+    // Update select all when individual checkboxes change
+    document.querySelector('#result_list').addEventListener('change', function(e) {
+        if (e.target.name === 'selected_passes') {
+            const allChecked = Array.from(
+                document.querySelectorAll('input[name="selected_passes"]')
+            ).every(cb => cb.checked);
+            document.getElementById('select-all').checked = allChecked;
+        }
+    });
+});
+</script>
+{% endblock %}

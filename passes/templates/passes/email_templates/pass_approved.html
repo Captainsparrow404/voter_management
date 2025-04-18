@@ -1,0 +1,142 @@
+<!--<!DOCTYPE html>-->
+<!--<html>-->
+<!--<head>-->
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: Arial, sans-serif;-->
+<!--            line-height: 1.6;-->
+<!--            color: #333;-->
+<!--        }-->
+<!--        .container {-->
+<!--            max-width: 600px;-->
+<!--            margin: 0 auto;-->
+<!--            padding: 20px;-->
+<!--        }-->
+<!--        .header {-->
+<!--            background-color: #4CAF50;-->
+<!--            color: white;-->
+<!--            padding: 20px;-->
+<!--            text-align: center;-->
+<!--        }-->
+<!--        .content {-->
+<!--            padding: 20px;-->
+<!--            background-color: #f9f9f9;-->
+<!--        }-->
+<!--        .footer {-->
+<!--            text-align: center;-->
+<!--            padding: 20px;-->
+<!--            font-size: 12px;-->
+<!--            color: #666;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--    <div class="container">-->
+<!--        <div class="header">-->
+<!--            <h2>Temple Pass Request {{ status }}</h2>-->
+<!--        </div>-->
+<!--        <div class="content">-->
+<!--            <p>Dear {{ name }},</p>-->
+
+<!--            {% if status == 'Approved' %}-->
+<!--            <p>We are pleased to inform you that your temple pass request has been approved.</p>-->
+<!--            {% else %}-->
+<!--            <p>We regret to inform you that your temple pass request has been rejected.</p>-->
+<!--            {% endif %}-->
+
+<!--            <h3>Pass Details:</h3>-->
+<!--            <ul>-->
+<!--                <li>Temple: {{ temple }}</li>-->
+<!--                <li>Visit Date: {{ visit_date }}</li>-->
+<!--                <li>Number of Persons: {{ num_persons }}</li>-->
+<!--                <li>Status: {{ status }}</li>-->
+<!--                <li>Processed on: {{ processed_at }}</li>-->
+<!--            </ul>-->
+
+<!--            {% if status == 'Approved' %}-->
+<!--            <p>Please carry a valid photo ID proof when visiting the temple.</p>-->
+<!--            {% endif %}-->
+<!--        </div>-->
+<!--        <div class="footer">-->
+<!--            <p>This is an automated message. Please do not reply to this email.</p>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</body>-->
+<!--</html>-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .pass-details {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Temple Pass Approved</h2>
+        </div>
+        <div class="content">
+            <p>Dear {{ name }},</p>
+            <p>Your temple pass request has been approved. Please find the details below:</p>
+
+            <div class="pass-details">
+                <h3>Pass Details:</h3>
+                <ul>
+                    <li>Temple: {{ temple }}</li>
+                    <li>Visit Date: {{ visit_date }}</li>
+                    <li>Number of Persons: {{ num_persons }}</li>
+                    <li>ID Proof Type: {{ id_proof_type }}</li>
+                    <li>ID Proof Number: {{ id_proof_number }}</li>
+                    <li>Approved On: {{ approved_at }}</li>
+                    <li>Approved By: {{ approved_by }}</li>
+                </ul>
+            </div>
+
+            <div class="important-notes">
+                <h4>Important Notes:</h4>
+                <ul>
+                    <li>Please carry the mentioned ID proof when visiting the temple</li>
+                    <li>This pass is valid only for the mentioned date</li>
+                    <li>Arrive at least 30 minutes before your scheduled time</li>
+                    <li>Follow all temple guidelines and dress code</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>For any queries, please contact temple administration.</p>
+        </div>
+    </div>
+</body>
+</html>
